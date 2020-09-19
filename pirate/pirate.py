@@ -290,7 +290,6 @@ def connect_mirror(mirror, printer, args):
         printer.print('Ok', color='alt')
         return results, mirror
 
-
 def search_mirrors(printer, args):
     # try default or user mirrors
     for mirror in args.mirror:
@@ -311,17 +310,19 @@ def search_mirrors(printer, args):
                       f.read().decode('utf-8'))
 
     mirrors = [i.decode('utf-8').strip() for i in f.readlines()][3:]
+    mirrors = [m for m in mirrors if m not in pirate.data.blacklist]
+
+    if pirate.data.mru_mirror:
+        mirrors.insert(0, pirate.data.mru_mirror)
 
     # try mirrors
     for mirror in mirrors:
-        if mirror in pirate.data.blacklist:
-            continue
         result = connect_mirror(mirror, printer, args)
         if result is not None:
+            pirate.data.update_mru_mirror(result[1])
             return result
     else:
         raise IOError('No more available mirrors')
-
 
 def pirate_main(args):
     printer = Printer(args.color)
